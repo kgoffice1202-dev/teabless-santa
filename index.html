@@ -340,7 +340,7 @@
           // 결과 ID를 파라미터로 붙임
           const shareUrl = `${baseUrl}?share=${finalChoice.id}`;
           
-          const text = `🎄TEABLESS Christmas Quiz🎄\n\n私のサンタピックは...\n✨${finalChoice.name}✨\n\nあなたにぴったりの香りは？\n今すぐ診断してみよう！👇\n`;
+          const text = `🎄TEABLESS Christmas Event🎄\n\n私のサンタピックは...\n✨${finalChoice.name}✨\n\nあなたにぴったりの香りは？\n今すぐ診断してみよう！👇\n`;
           const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(text + shareUrl)}`;
           window.open(lineUrl, '_blank');
         };
