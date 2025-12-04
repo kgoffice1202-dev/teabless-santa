@@ -754,7 +754,7 @@
                 </div>
               )}
 
-              {/* FORM */}
+             {/* FORM */}
               {step === "form" && (
                 <div className="w-full max-w-xs animate-fade-in pt-4 pb-12 flex-1 flex flex-col justify-center">
                   <div className="text-center mb-6 pt-2">
@@ -775,9 +775,8 @@
                       購入番号を入力してください。
                     </p>
                     
-                    {/* ▼▼▼ 문구 수정됨 ▼▼▼ */}
                     <div className="mt-4 bg-[#d63031]/20 border border-[#d63031] text-[#ff7675] text-xs font-bold px-3 py-1 rounded-full inline-block animate-pulse">
-                      🎁 素敵なエピソードで当選確率UP！
+                      🎁 想いが伝わるエピソードで当選確率UP！
                     </div>
                   </div>
 
@@ -812,8 +811,8 @@
                       </label>
                       <textarea
                         required
-                        // ▼▼▼ 일본어 유효성 메시지 추가 ▼▼▼
-                        onInvalid={(e) => e.target.setCustomValidity('このフィールドを入力してください。')}
+                        // ▼▼▼ [수정 1] 사연 입력칸 일본어 경고 메시지 ▼▼▼
+                        onInvalid={(e) => e.target.setCustomValidity('エピソードを入力してください。')}
                         onInput={(e) => e.target.setCustomValidity('')}
                         // ▲▲▲
                         rows="4"
@@ -840,6 +839,10 @@
                         <input
                           id="purchase-input-final"
                           type="text"
+                          // 중요: '주문번호 또는 이메일' 로직이므로 여기엔 required를 빼는 것이 좋습니다.
+                          // 만약 required를 넣으셨다면 아래 코드가 일본어 메시지를 띄워줍니다.
+                          onInvalid={(e) => e.target.setCustomValidity('注文番号を入力してください。')}
+                          onInput={(e) => e.target.setCustomValidity('')}
                           placeholder="例) 20251225"
                           className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#e8c660] focus:bg-black/30 focus:outline-none transition-all text-sm tracking-wider"
                           value={purchaseNumber}
@@ -860,6 +863,16 @@
                         </label>
                         <input
                           type="email"
+                          // ▼▼▼ [수정 2] 이메일 형식(@누락) 일본어 경고 메시지 ▼▼▼
+                          onInvalid={(e) => {
+                            if(e.target.validity.typeMismatch) {
+                                e.target.setCustomValidity('メールアドレスの形式で入力してください (@を含めてください)。');
+                            } else {
+                                e.target.setCustomValidity('メールアドレスを入力してください。');
+                            }
+                          }}
+                          onInput={(e) => e.target.setCustomValidity('')}
+                          // ▲▲▲
                           placeholder="example@email.com"
                           className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#e8c660] focus:bg-black/30 focus:outline-none transition-all text-sm"
                           value={email}
