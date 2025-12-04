@@ -302,6 +302,7 @@
           preferredItem: "",
         });
         const [isSubmitting, setIsSubmitting] = useState(false);
+        const [isSharedView, setIsSharedView] = useState(false); // 공유된 링크로 들어왔는지 여부
 
         const clickSoundRef = useRef(null);
 
@@ -314,12 +315,33 @@
           }
         };
 
-        // LINE 공유 기능 추가
+        // URL 파라미터 확인 (공유된 링크인지 체크)
+        useEffect(() => {
+          const params = new URLSearchParams(window.location.search);
+          const sharedResultId = params.get("share");
+
+          if (sharedResultId) {
+            const product = PRODUCTS.find((p) => p.id === sharedResultId);
+            if (product) {
+              setRecommendedProduct(product);
+              setFinalChoice(product);
+              setIsSharedView(true); // 공유 모드 활성화
+              setStep("result"); // 바로 결과 화면으로
+            }
+          }
+        }, []);
+
+        // LINE 공유 기능 (수정됨: URL에 결과 ID 포함)
         const handleLineShare = () => {
           if (!finalChoice) return;
-          const currentUrl = window.location.href;
+          
+          // 현재 URL에서 기존 파라미터 제거하고 깨끗한 base URL 가져오기
+          const baseUrl = window.location.href.split('?')[0];
+          // 결과 ID를 파라미터로 붙임
+          const shareUrl = `${baseUrl}?share=${finalChoice.id}`;
+          
           const text = `🎄TEABLESS Christmas Quiz🎄\n\n私のサンタピックは...\n✨${finalChoice.name}✨\n\nあなたにぴったりの香りは？\n今すぐ診断してみよう！👇\n`;
-          const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(text + currentUrl)}`;
+          const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(text + shareUrl)}`;
           window.open(lineUrl, '_blank');
         };
 
@@ -329,6 +351,11 @@
 
         const resetApp = () => {
           playClickSound();
+          
+          // URL 파라미터 제거 (깨끗하게 퀴즈 시작)
+          const cleanUrl = window.location.href.split('?')[0];
+          window.history.pushState({}, document.title, cleanUrl);
+
           setStep("intro");
           setPurchaseNumber("");
           setEmail("");
@@ -338,6 +365,7 @@
           setFinalChoice(null);
           setFormData({ story: "", preferredItem: "" });
           setIsSubmitting(false);
+          setIsSharedView(false); // 공유 모드 해제
         };
 
         const snowflakes = useMemo(
@@ -388,12 +416,10 @@
           e.preventDefault();
           playClickSound();
 
-          // 유효성 검사: 주문번호(5자리 이상) 또는 이메일(@ 포함) 중 하나라도 있으면 OK
           const hasPurchaseNumber = purchaseNumber.length >= 5;
           const hasEmail = email.includes("@") && email.includes(".");
 
           if (!hasPurchaseNumber && !hasEmail) {
-            // 둘 다 없으면 경고 (주문번호 입력칸을 강조)
             const input = document.getElementById("purchase-input-final");
             if (input) {
               input.style.borderColor = "red";
@@ -578,11 +604,9 @@
                       <button
                         key={`${currentQIdx}-${idx}`}
                         onClick={() => handleAnswer(opt.value)}
-                        // ▼▼▼ [수정 1] 화살표가 남지 않도록 group-hover 등을 단순화하고 화살표 아이콘 제거 ▼▼▼
                         className="w-full bg-white/5 active:bg-[#e8c660] active:text-[#1a2e25] active:scale-95 border border-white/10 p-4 rounded-2xl text-left transition-all flex items-center justify-center group backdrop-blur-sm shadow-sm"
                       >
                         <span className="font-medium text-center">{opt.text}</span>
-                        {/* 화살표(➜) 태그를 제거하여 잔상 문제 해결 */}
                       </button>
                     ))}
                   </div>
@@ -613,19 +637,33 @@
                 <div className="w-full max-w-sm animate-fade-in pt-4 pb-20">
                   <div className="text-center mb-6">
                     <span className="bg-[#d63031] text-white px-4 py-1.5 rounded-full text-xs font-bold tracking-wider mb-4 inline-block shadow-md border border-white/10">
-                      SANTA'S PICK
+                      {isSharedView ? "SANTA'S RECOMMENDATION" : "SANTA'S PICK"}
                     </span>
                     <h3 className="text-2xl font-extrabold drop-shadow-md leading-relaxed text-pretty">
-                      <span className="text-[#e8c660] border-b-2 border-[#e8c660]/50 pb-1 px-1 inline-block">
-                        {
-                          QUESTIONS[0].options.find(
-                            (o) => o.value === answers[0]
-                          )?.text || "大切な人"
-                        }
-                      </span>
-                      への
-                      <br />
-                      プレゼント
+                      {/* 공유된 화면일 때는 타이틀을 다르게 표시 */}
+                      {isSharedView ? (
+                        <>
+                          <span className="text-[#e8c660] border-b-2 border-[#e8c660]/50 pb-1 px-1 inline-block">
+                            大切な人
+                          </span>
+                          への
+                          <br />
+                          おすすめギフト
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-[#e8c660] border-b-2 border-[#e8c660]/50 pb-1 px-1 inline-block">
+                            {
+                              QUESTIONS[0].options.find(
+                                (o) => o.value === answers[0]
+                              )?.text || "大切な人"
+                            }
+                          </span>
+                          への
+                          <br />
+                          プレゼント
+                        </>
+                      )}
                     </h3>
                   </div>
 
@@ -702,7 +740,7 @@
                     </div>
                   </div>
                   
-                  {/* ▼▼▼ [수정 2] LINE 공유 버튼 추가 (결과 카드 바로 아래) ▼▼▼ */}
+                  {/* LINE 공유 버튼 */}
                   <div className="mb-8 flex justify-center">
                     <button
                       onClick={handleLineShare}
@@ -713,62 +751,84 @@
                     </button>
                   </div>
 
-                  <div className="bg-[#1a4c3a]/80 backdrop-blur-md rounded-2xl p-5 border border-[#e8c660]/20 mb-8 shadow-lg">
-                    <div className="flex items-center gap-2 mb-4">
-                      <span>🔁</span>
-                      <h4 className="text-white font-bold text-sm">
-                        他の香りに変更しますか？
-                      </h4>
-                    </div>
+                  {/* 공유받은 사람에게는 다른 제품 선택 옵션을 숨기고, "나도 하기" 유도 */}
+                  {!isSharedView ? (
+                    <div className="bg-[#1a4c3a]/80 backdrop-blur-md rounded-2xl p-5 border border-[#e8c660]/20 mb-8 shadow-lg">
+                      <div className="flex items-center gap-2 mb-4">
+                        <span>🔁</span>
+                        <h4 className="text-white font-bold text-sm">
+                          他の香りに変更しますか？
+                        </h4>
+                      </div>
 
-                    <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                      {PRODUCTS.map((prod) => (
-                        <button
-                          key={prod.id}
-                          onClick={() => {
-                            playClickSound();
-                            setFinalChoice(prod);
-                          }}
-                          className={`w-full p-3 rounded-xl text-left text-sm transition-all border flex items-center justify-between
-                      ${
-                        finalChoice.id === prod.id
-                          ? "bg-[#e8c660] border-[#e8c660] text-[#1a2e25] font-extrabold shadow-md transform scale-[1.02]"
-                          : "bg-white/5 border-white/5 text-white/70 active:bg-white/10"
-                      }`}
-                        >
-                          <div className="flex flex-col items-start gap-1 w-[85%]">
-                            <span
-                              className={`text-[10px] uppercase tracking-wider w-full ${
-                                finalChoice.id === prod.id
-                                  ? "text-[#1a2e25]/80 font-bold"
-                                  : "text-[#e8c660] opacity-90"
-                              }`}
-                            >
-                              {prod.scent}
-                            </span>
-                            <span className="font-medium text-sm text-left leading-tight text-pretty break-words w-full">
-                              {prod.name}
-                            </span>
-                          </div>
-                          {finalChoice.id === prod.id && (
-                            <span className="shrink-0">✔️</span>
-                          )}
-                        </button>
-                      ))}
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                        {PRODUCTS.map((prod) => (
+                          <button
+                            key={prod.id}
+                            onClick={() => {
+                              playClickSound();
+                              setFinalChoice(prod);
+                            }}
+                            className={`w-full p-3 rounded-xl text-left text-sm transition-all border flex items-center justify-between
+                        ${
+                          finalChoice.id === prod.id
+                            ? "bg-[#e8c660] border-[#e8c660] text-[#1a2e25] font-extrabold shadow-md transform scale-[1.02]"
+                            : "bg-white/5 border-white/5 text-white/70 active:bg-white/10"
+                        }`}
+                          >
+                            <div className="flex flex-col items-start gap-1 w-[85%]">
+                              <span
+                                className={`text-[10px] uppercase tracking-wider w-full ${
+                                  finalChoice.id === prod.id
+                                    ? "text-[#1a2e25]/80 font-bold"
+                                    : "text-[#e8c660] opacity-90"
+                                }`}
+                              >
+                                {prod.scent}
+                              </span>
+                              <span className="font-medium text-sm text-left leading-tight text-pretty break-words w-full">
+                                {prod.name}
+                              </span>
+                            </div>
+                            {finalChoice.id === prod.id && (
+                              <span className="shrink-0">✔️</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    // 공유받은 사람이 보는 안내 문구
+                    <div className="text-center mb-8 px-4">
+                      <p className="text-sm text-white/80 leading-relaxed">
+                        あなたもサンタになって<br/>
+                        大切な人にギフトを贈りませんか？
+                      </p>
+                    </div>
+                  )}
 
                   <div className="mt-8 mb-4 sticky bottom-6 z-30">
-                    <button
-                      onClick={() => {
-                        playClickSound();
-                        setStep("form");
-                      }}
-                      className="w-full bg-[#d63031] text-white py-4 rounded-2xl font-bold text-lg active:bg-[#ff7675] active:scale-95 transition-all shadow-[0_0_25px_rgba(214,48,49,0.6)] flex items-center justify-center gap-2 border-2 border-white/10"
-                    >
-                      <span>🎁</span>
-                      <span>このギフトで確定する</span>
-                    </button>
+                    {/* 공유받은 상태(isSharedView)면 '나도 진단하기' 버튼, 아니면 '선물 확정' 버튼 */}
+                    {isSharedView ? (
+                      <button
+                        onClick={resetApp} // 초기화하고 처음부터 시작
+                        className="w-full bg-[#e8c660] text-[#1a2e25] py-4 rounded-2xl font-bold text-lg active:bg-white active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <span>🎅</span>
+                        <span>私もサンタ診断をする</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          playClickSound();
+                          setStep("form");
+                        }}
+                        className="w-full bg-[#d63031] text-white py-4 rounded-2xl font-bold text-lg active:bg-[#ff7675] active:scale-95 transition-all shadow-[0_0_25px_rgba(214,48,49,0.6)] flex items-center justify-center gap-2 border-2 border-white/10"
+                      >
+                        <span>🎁</span>
+                        <span>このギフトで確定する</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
