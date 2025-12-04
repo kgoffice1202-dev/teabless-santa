@@ -314,6 +314,15 @@
           }
         };
 
+        // LINE 공유 기능 추가
+        const handleLineShare = () => {
+          if (!finalChoice) return;
+          const currentUrl = window.location.href;
+          const text = `🎄TEABLESS Christmas Quiz🎄\n\n私のサンタピックは...\n✨${finalChoice.name}✨\n\nあなたにぴったりの香りは？\n今すぐ診断してみよう！👇\n`;
+          const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(text + currentUrl)}`;
+          window.open(lineUrl, '_blank');
+        };
+
         useEffect(() => {
           window.scrollTo(0, 0);
         }, [step]);
@@ -525,7 +534,7 @@
                   <button
                     onClick={() => {
                       playClickSound();
-                      setStep("quiz"); // 바로 퀴즈로 이동
+                      setStep("quiz");
                     }}
                     className="w-full max-w-xs group bg-[#d63031] hover:bg-[#ff7675] text-white px-8 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-900/40 transform hover:-translate-y-1 mt-4"
                   >
@@ -567,14 +576,13 @@
                   <div className="grid grid-cols-1 gap-3 pt-2 w-full">
                     {QUESTIONS[currentQIdx].options.map((opt, idx) => (
                       <button
-                        key={`${currentQIdx}-${idx}`} // 버그 수정: 고유 키 할당
+                        key={`${currentQIdx}-${idx}`}
                         onClick={() => handleAnswer(opt.value)}
-                        className="w-full bg-white/5 active:bg-[#e8c660] active:text-[#1a2e25] active:scale-95 border border-white/10 p-4 rounded-2xl text-left transition-all flex items-center justify-between group backdrop-blur-sm shadow-sm"
+                        // ▼▼▼ [수정 1] 화살표가 남지 않도록 group-hover 등을 단순화하고 화살표 아이콘 제거 ▼▼▼
+                        className="w-full bg-white/5 active:bg-[#e8c660] active:text-[#1a2e25] active:scale-95 border border-white/10 p-4 rounded-2xl text-left transition-all flex items-center justify-center group backdrop-blur-sm shadow-sm"
                       >
-                        <span className="font-medium">{opt.text}</span>
-                        <span className="opacity-0 group-active:opacity-100 group-hover:opacity-100 transition-all transform group-active:translate-x-1 group-hover:translate-x-1">
-                          ➜
-                        </span>
+                        <span className="font-medium text-center">{opt.text}</span>
+                        {/* 화살표(➜) 태그를 제거하여 잔상 문제 해결 */}
                       </button>
                     ))}
                   </div>
@@ -693,6 +701,17 @@
                       </div>
                     </div>
                   </div>
+                  
+                  {/* ▼▼▼ [수정 2] LINE 공유 버튼 추가 (결과 카드 바로 아래) ▼▼▼ */}
+                  <div className="mb-8 flex justify-center">
+                    <button
+                      onClick={handleLineShare}
+                      className="bg-[#06C755] hover:bg-[#05b34c] text-white px-6 py-3 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg transition-all active:scale-95"
+                    >
+                      <span className="text-lg">💬</span>
+                      <span>LINEで結果をシェア</span>
+                    </button>
+                  </div>
 
                   <div className="bg-[#1a4c3a]/80 backdrop-blur-md rounded-2xl p-5 border border-[#e8c660]/20 mb-8 shadow-lg">
                     <div className="flex items-center gap-2 mb-4">
@@ -754,7 +773,7 @@
                 </div>
               )}
 
-             {/* FORM */}
+              {/* FORM */}
               {step === "form" && (
                 <div className="w-full max-w-xs animate-fade-in pt-4 pb-12 flex-1 flex flex-col justify-center">
                   <div className="text-center mb-6 pt-2">
@@ -774,7 +793,7 @@
                       <br />
                       購入番号を入力してください。
                     </p>
-                    
+                     
                     <div className="mt-4 bg-[#d63031]/20 border border-[#d63031] text-[#ff7675] text-xs font-bold px-3 py-1 rounded-full inline-block animate-pulse">
                       🎁 想いが伝わるエピソードで当選確率UP！
                     </div>
@@ -811,10 +830,8 @@
                       </label>
                       <textarea
                         required
-                        // ▼▼▼ [수정 1] 사연 입력칸 일본어 경고 메시지 ▼▼▼
                         onInvalid={(e) => e.target.setCustomValidity('エピソードを入力してください。')}
                         onInput={(e) => e.target.setCustomValidity('')}
-                        // ▲▲▲
                         rows="4"
                         placeholder="例：いつもお世話になっている母へ、冬の寒さを忘れるような温かい香りを贈りたくて..."
                         className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#e8c660] focus:bg-black/30 focus:outline-none resize-none transition-colors leading-relaxed"
@@ -827,20 +844,18 @@
 
                     {/* 선택 입력 섹션 */}
                     <div className="pt-2 border-t border-white/10 mt-2">
-                       <p className="text-xs text-center text-white/60 mb-4">
-                         以下、どちらか一方を入力してください
-                       </p>
+                        <p className="text-xs text-center text-white/60 mb-4">
+                          以下、どちらか一方を入力してください
+                        </p>
 
-                       {/* 주문번호 입력 */}
-                       <div className="mb-4">
-                        <label className="block text-xs font-bold text-[#e8c660] mb-2 ml-1 flex items-center gap-1">
-                           🧾 購入済みの方は注文番号
-                        </label>
-                        <input
+                        {/* 주문번호 입력 */}
+                        <div className="mb-4">
+                         <label className="block text-xs font-bold text-[#e8c660] mb-2 ml-1 flex items-center gap-1">
+                            🧾 購入済みの方は注文番号
+                         </label>
+                         <input
                           id="purchase-input-final"
                           type="text"
-                          // 중요: '주문번호 또는 이메일' 로직이므로 여기엔 required를 빼는 것이 좋습니다.
-                          // 만약 required를 넣으셨다면 아래 코드가 일본어 메시지를 띄워줍니다.
                           onInvalid={(e) => e.target.setCustomValidity('注文番号を入力してください。')}
                           onInput={(e) => e.target.setCustomValidity('')}
                           placeholder="例) 20251225"
@@ -863,7 +878,6 @@
                         </label>
                         <input
                           type="email"
-                          // ▼▼▼ [수정 2] 이메일 형식(@누락) 일본어 경고 메시지 ▼▼▼
                           onInvalid={(e) => {
                             if(e.target.validity.typeMismatch) {
                                 e.target.setCustomValidity('メールアドレスの形式で入力してください (@を含めてください)。');
@@ -872,7 +886,6 @@
                             }
                           }}
                           onInput={(e) => e.target.setCustomValidity('')}
-                          // ▲▲▲
                           placeholder="example@email.com"
                           className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#e8c660] focus:bg-black/30 focus:outline-none transition-all text-sm"
                           value={email}
