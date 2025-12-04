@@ -5,15 +5,12 @@
     <title>Teabless Christmas Gift Quiz</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- React / ReactDOM / Babel CDN -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Google Fonts -->
     <link
       href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Dancing+Script:wght@700&family=Chewy&family=Zen+Old+Mincho:wght@700&display=swap"
       rel="stylesheet"
@@ -105,7 +102,6 @@
   <body class="bg-[#0f281e]">
     <div id="root"></div>
 
-    <!-- React 코드 -->
     <script type="text/babel">
       const { useState, useEffect, useRef, useMemo } = React;
 
@@ -296,6 +292,7 @@
       function App() {
         const [step, setStep] = useState("intro");
         const [purchaseNumber, setPurchaseNumber] = useState("");
+        const [email, setEmail] = useState("");
         const [answers, setAnswers] = useState({});
         const [currentQIdx, setCurrentQIdx] = useState(0);
         const [recommendedProduct, setRecommendedProduct] = useState(null);
@@ -325,6 +322,7 @@
           playClickSound();
           setStep("intro");
           setPurchaseNumber("");
+          setEmail("");
           setAnswers({});
           setCurrentQIdx(0);
           setRecommendedProduct(null);
@@ -344,23 +342,6 @@
             })),
           []
         );
-
-        const handlePurchaseSubmit = (e) => {
-          e.preventDefault();
-          playClickSound();
-          if (purchaseNumber.length < 5) {
-            const input = document.getElementById("purchase-input");
-            if (input) {
-              input.style.borderColor = "red";
-              setTimeout(
-                () => (input.style.borderColor = "rgba(232, 198, 96, 0.4)"),
-                1000
-              );
-            }
-            return;
-          }
-          setStep("quiz");
-        };
 
         const handleAnswer = (value) => {
           playClickSound();
@@ -397,6 +378,27 @@
         const handleFinalSubmit = async (e) => {
           e.preventDefault();
           playClickSound();
+
+          // 유효성 검사: 주문번호(5자리 이상) 또는 이메일(@ 포함) 중 하나라도 있으면 OK
+          const hasPurchaseNumber = purchaseNumber.length >= 5;
+          const hasEmail = email.includes("@") && email.includes(".");
+
+          if (!hasPurchaseNumber && !hasEmail) {
+            // 둘 다 없으면 경고 (주문번호 입력칸을 강조)
+            const input = document.getElementById("purchase-input-final");
+            if (input) {
+                input.style.borderColor = "red";
+                input.style.backgroundColor = "rgba(255, 0, 0, 0.1)";
+                input.focus();
+                
+                setTimeout(() => {
+                    input.style.borderColor = "rgba(255, 255, 255, 0.1)";
+                    input.style.backgroundColor = "rgba(0, 0, 0, 0.2)";
+                }, 1500);
+            }
+            return;
+          }
+
           setIsSubmitting(true);
 
           const giftString = `${finalChoice.name} (${
@@ -411,6 +413,7 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   purchaseNumber: purchaseNumber,
+                  email: email,
                   gift: giftString,
                   story: formData.story,
                 }),
@@ -523,7 +526,7 @@
                   <button
                     onClick={() => {
                       playClickSound();
-                      setStep("input");
+                      setStep("quiz"); // 바로 퀴즈로 이동
                     }}
                     className="w-full max-w-xs group bg-[#d63031] hover:bg-[#ff7675] text-white px-8 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-900/40 transform hover:-translate-y-1 mt-4"
                   >
@@ -532,44 +535,6 @@
                       ➜
                     </span>
                   </button>
-                </div>
-              )}
-
-              {/* INPUT */}
-              {step === "input" && (
-                <div className="w-full max-w-xs space-y-8 text-center animate-fade-in flex-1 flex flex-col justify-center">
-                  <div className="space-y-3">
-                    <h3 className="text-2xl font-bold text-[#e8c660] drop-shadow-md">
-                      購入認証
-                    </h3>
-                    <p className="text-sm text-white/80 leading-relaxed text-pretty">
-                      注文履歴にある
-                      <br />
-                      <span className="bg-white/10 px-2 py-0.5 rounded text-[#e8c660] font-bold">
-                        購入番号
-                      </span>
-                      を入力してください
-                    </p>
-                  </div>
-
-                  <form onSubmit={handlePurchaseSubmit} className="space-y-4">
-                    <div className="relative">
-                      <input
-                        id="purchase-input"
-                        type="text"
-                        placeholder="例) 20251225"
-                        className="w-full bg-white/5 border border-[#e8c660]/40 rounded-2xl px-4 py-4 text-center text-white placeholder-white/30 focus:outline-none focus:border-[#e8c660] focus:bg-white/10 transition-all backdrop-blur-sm text-lg tracking-wider"
-                        value={purchaseNumber}
-                        onChange={(e) => setPurchaseNumber(e.target.value)}
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full bg-[#1a4c3a] active:bg-[#e8c660] active:text-[#1a2e25] border border-[#e8c660]/50 text-[#e8c660] py-4 rounded-2xl transition-all font-bold shadow-lg"
-                    >
-                      確認する
-                    </button>
-                  </form>
                 </div>
               )}
 
@@ -603,7 +568,7 @@
                   <div className="grid grid-cols-1 gap-3 pt-2 w-full">
                     {QUESTIONS[currentQIdx].options.map((opt, idx) => (
                       <button
-                        key={idx}
+                        key={`${currentQIdx}-${idx}`} // 버그 수정: 고유 키 할당
                         onClick={() => handleAnswer(opt.value)}
                         className="w-full bg-white/5 active:bg-[#e8c660] active:text-[#1a2e25] active:scale-95 border border-white/10 p-4 rounded-2xl text-left transition-all flex items-center justify-between group backdrop-blur-sm shadow-sm"
                       >
@@ -798,7 +763,7 @@
                       ✉️
                     </div>
                     <h3 className="text-2xl font-extrabold drop-shadow-md">
-                      エピソード入力
+                      申し込み情報の入力
                     </h3>
                     <p className="text-sm text-white/80 mt-3 leading-relaxed text-pretty">
                       <span className="text-[#e8c660] font-bold">
@@ -806,13 +771,10 @@
                       </span>
                       ラインから
                       <br />
-                      贈りたい製品を選んで、
+                      ご希望の製品とエピソード、
                       <br />
-                      その理由を教えてください。
+                      連絡先を入力してください。
                     </p>
-                    <div className="mt-4 bg-[#d63031]/20 border border-[#d63031] text-[#ff7675] text-xs font-bold px-3 py-1 rounded-full inline-block animate-pulse">
-                      🎁 書いていただくと当選確率UP！
-                    </div>
                   </div>
 
                   <form
@@ -842,11 +804,11 @@
 
                     <div>
                       <label className="block text-xs font-bold text-[#e8c660] mb-2 ml-1">
-                        プレゼントを贈りたい理由
+                        🎁 プレゼントを贈りたい理由
                       </label>
                       <textarea
                         required
-                        rows="6"
+                        rows="4"
                         placeholder="例：いつもお世話になっている母へ、冬の寒さを忘れるような温かい香りを贈りたくて..."
                         className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#e8c660] focus:bg-black/30 focus:outline-none resize-none transition-colors leading-relaxed"
                         value={formData.story}
@@ -854,6 +816,48 @@
                           setFormData({ ...formData, story: e.target.value })
                         }
                       />
+                    </div>
+
+                    {/* 선택 입력 섹션 */}
+                    <div className="pt-2 border-t border-white/10 mt-2">
+                       <p className="text-xs text-center text-white/60 mb-4">
+                         以下、どちらか一方を入力してください
+                       </p>
+
+                       {/* 주문번호 입력 */}
+                       <div className="mb-4">
+                        <label className="block text-xs font-bold text-[#e8c660] mb-2 ml-1 flex items-center gap-1">
+                           🧾 購入済みの方は注文番号
+                        </label>
+                        <input
+                          id="purchase-input-final"
+                          type="text"
+                          placeholder="例) 20251225"
+                          className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#e8c660] focus:bg-black/30 focus:outline-none transition-all text-sm tracking-wider"
+                          value={purchaseNumber}
+                          onChange={(e) => setPurchaseNumber(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-3 my-2 opacity-50">
+                        <div className="h-px bg-white/30 flex-1"></div>
+                        <span className="text-[10px] text-white">OR</span>
+                        <div className="h-px bg-white/30 flex-1"></div>
+                      </div>
+
+                      {/* 이메일 입력 */}
+                      <div>
+                        <label className="block text-xs font-bold text-[#e8c660] mb-2 ml-1 flex items-center gap-1">
+                           📧 未購入の方はメールアドレス
+                        </label>
+                        <input
+                          type="email"
+                          placeholder="example@email.com"
+                          className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#e8c660] focus:bg-black/30 focus:outline-none transition-all text-sm"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                        />
+                      </div>
                     </div>
 
                     <button
@@ -915,6 +919,16 @@
                         </span>
                         <span className="font-bold text-[#e8c660] text-right w-2/3 text-pretty">
                           {formData.preferredItem || "ランダム"}
+                        </span>
+                      </div>
+                      
+                      {/* 입력된 연락처 정보(주문번호 또는 이메일) 표시 */}
+                      <div className="flex justify-between items-start mt-2 pt-2 border-t border-white/5">
+                        <span className="text-white/60 font-medium shrink-0">
+                          Contact.
+                        </span>
+                        <span className="font-mono text-white/80 text-right text-xs break-all">
+                          {purchaseNumber ? `Order: ${purchaseNumber}` : email}
                         </span>
                       </div>
                     </div>
