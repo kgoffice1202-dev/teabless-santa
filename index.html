@@ -387,14 +387,13 @@
             // 둘 다 없으면 경고 (주문번호 입력칸을 강조)
             const input = document.getElementById("purchase-input-final");
             if (input) {
-                input.style.borderColor = "red";
-                input.style.backgroundColor = "rgba(255, 0, 0, 0.1)";
-                input.focus();
-                
-                setTimeout(() => {
-                    input.style.borderColor = "rgba(255, 255, 255, 0.1)";
-                    input.style.backgroundColor = "rgba(0, 0, 0, 0.2)";
-                }, 1500);
+              input.style.borderColor = "red";
+              input.style.backgroundColor = "rgba(255, 0, 0, 0.1)";
+              input.focus();
+              setTimeout(() => {
+                input.style.borderColor = "rgba(255, 255, 255, 0.1)";
+                input.style.backgroundColor = "rgba(0, 0, 0, 0.2)";
+              }, 1500);
             }
             return;
           }
@@ -771,10 +770,15 @@
                       </span>
                       ラインから
                       <br />
-                      ご希望の製品とエピソード、
+                      贈りたい製品と理由、
                       <br />
-                      連絡先を入力してください。
+                      購入番号を入力してください。
                     </p>
+                    
+                    {/* ▼▼▼ 문구 수정됨 ▼▼▼ */}
+                    <div className="mt-4 bg-[#d63031]/20 border border-[#d63031] text-[#ff7675] text-xs font-bold px-3 py-1 rounded-full inline-block animate-pulse">
+                      🎁 想いが伝わるエピソードで当選確率UP！
+                    </div>
                   </div>
 
                   <form
@@ -808,6 +812,10 @@
                       </label>
                       <textarea
                         required
+                        // ▼▼▼ 일본어 유효성 메시지 추가 ▼▼▼
+                        onInvalid={(e) => e.target.setCustomValidity('このフィールドを入力してください。')}
+                        onInput={(e) => e.target.setCustomValidity('')}
+                        // ▲▲▲
                         rows="4"
                         placeholder="例：いつもお世話になっている母へ、冬の寒さを忘れるような温かい香りを贈りたくて..."
                         className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#e8c660] focus:bg-black/30 focus:outline-none resize-none transition-colors leading-relaxed"
